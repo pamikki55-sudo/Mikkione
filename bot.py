@@ -1,65 +1,73 @@
-import asyncio, sqlite3, os
+import asyncio, os
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 from aiohttp import web
 
-TOKEN = "7963384798:AAH7Y-f0LeDxQ3vKLfJNtwOOJjlIyS20RYQ"
-# Твой точный URL из панели Bothost
+# ТВОИ ДАННЫЕ
+TOKEN = "8258676796:AAEqzSr3tpWeN3QxrFwORN4RIu4ZMaFIDfU"
 APP_URL = "https://pamikki55-sudo-mikkione.bothost.ru"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# База данных для баланса
-def init_db():
-    conn = sqlite3.connect('database.db')
-    cur = conn.cursor()
-    cur.execute('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, balance INTEGER DEFAULT 0)')
-    conn.commit()
-    conn.close()
+# ФУНКЦИЯ ДЛЯ ОТРИСОВКИ ДИЗАЙНА (КАК НА СКРИНШОТАХ)
+def get_html(user_name):
+    return f"""
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <style>
+            body {{ font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 15px; color: #1c1e21; }}
+            .header {{ background: white; padding: 20px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }}
+            .balance {{ background: #e7f3ff; padding: 8px 16px; border-radius: 25px; color: #1877f2; font-weight: bold; font-size: 18px; }}
+            .task-card {{ background: white; padding: 20px; border-radius: 15px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }}
+            .btn {{ background: #1877f2; color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: bold; }}
+            .withdraw {{ display: block; text-align: center; background: #42b72a; color: white; padding: 18px; border-radius: 15px; margin-top: 30px; text-decoration: none; font-weight: bold; font-size: 18px; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <div style="font-weight: bold; font-size: 20px;">Привет, {user_name}! 👋</div>
+            <div class="balance">⭐️ 0 ₽</div>
+        </div>
+        <h3 style="margin-top: 30px; color: #606770;">ДОСТУПНЫЕ ЗАДАНИЯ</h3>
+        
+        <div class="task-card">
+            <div><b>Подписаться на канал</b><br><small style="color:green;">+ 150 ₽</small></div>
+            <a href="https://t.me/mikkione" class="btn">Выполнить</a>
+        </div>
+
+        <div class="task-card">
+            <div><b>Поставить лайки</b><br><small style="color:green;">+ 100 ₽</small></div>
+            <a href="#" class="btn">Выполнить</a>
+        </div>
+
+        <a href="https://t.me/ONMIKKI" class="withdraw">Вывод средств</a>
+    </body>
+    </html>
+    """
 
 @dp.message(CommandStart())
 async def start(message: types.Message):
-    # Кнопка, которая открывает Mini App
+    user_name = message.from_user.first_name
+    # Используем твою новую ссылку
     kb = [[types.InlineKeyboardButton(text="Открыть Биржу 💰", web_app=types.WebAppInfo(url=APP_URL))]]
-    await message.answer("Приложение готово! Нажми на кнопку ниже:", 
+    await message.answer(f"Привет, {user_name}! 👋\nБиржа запущена и готова к работе.", 
                          reply_markup=types.InlineKeyboardMarkup(inline_keyboard=kb))
 
-# Твой дизайн сайта (вместо index.html)
-async def handle_webapp(request):
-    html_content = """
-    <!DOCTYPE html><html><head><meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; text-align: center; }
-        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { color: #1a73e8; }
-        .btn { display: inline-block; padding: 15px 30px; background: #34a853; color: white; text-decoration: none; border-radius: 10px; font-weight: bold; margin-top: 20px; }
-    </style>
-    </head><body>
-        <div class="card">
-            <h1>Биржа Труда ⚒️</h1>
-            <p>Добро пожаловать!</p>
-            <div style="font-size: 24px;">Баланс: <b>0 ₽</b></div>
-            <a href="https://t.me/ONMIKKI" class="btn">Вывод средств</a>
-        </div>
-    </body></html>
-    """
-    return web.Response(text=html_content, content_type='text/html')
+async def handle(request):
+    return web.Response(text=get_html("Пользователь"), content_type='text/html')
 
 async def main():
-    init_db()
-    # Создаем веб-сервер
     app = web.Application()
-    app.router.add_get('/', handle_webapp)
-    
+    app.router.add_get('/', handle)
     runner = web.AppRunner(app)
     await runner.setup()
-    # Bothost ВСЕГДА слушает порт 8080
-    site = web.TCPSite(runner, '0.0.0.0', 8080)
-    await site.start()
-    
-    print("Бот и Веб-сайт запущены на Bothost!")
+    # СТРОГО ПОРТ 8080
+    await web.TCPSite(runner, '0.0.0.0', 8080).start()
+    print("ВЕБ-СЕРВЕР ЗАПУЩЕН НА ПОРТУ 8080")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
