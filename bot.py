@@ -4,9 +4,9 @@ from aiogram.filters import CommandStart
 from aiohttp import web
 import os
 
-# Твой актуальный токен
+# Твой токен из BotFather
 TOKEN = "7963384798:AAH7Y-f0LeDxQ3vKLfJNtwOOJjlIyS20RYQ"
-# Твоя ссылка
+# Твой адрес на Bothost
 APP_URL = "https://pamikki55-sudo-mikkione.bothost.ru"
 
 bot = Bot(token=TOKEN)
@@ -19,7 +19,7 @@ async def start_cmd(message: types.Message):
         web_app=types.WebAppInfo(url=APP_URL)
     )]]
     await message.answer(
-        f"Привет, {message.from_user.first_name}! 👋\nБиржа запущена и готова к работе.",
+        f"Привет, {message.from_user.first_name}! 👋\nТвоя Биржа готова к работе.",
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=kb)
     )
 
@@ -36,7 +36,7 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', 8080)
     
-    print("Бот успешно запущен!")
+    print("Запуск выполнен успешно!")
     await asyncio.gather(site.start(), dp.start_polling(bot))
 
 if __name__ == "__main__":
